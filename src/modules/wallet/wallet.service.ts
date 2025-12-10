@@ -16,6 +16,7 @@ import {
 } from '../../entities';
 import { DepositDto } from './dto/deposit.dto';
 import { TransferDto } from './dto/transfer.dto';
+import type { PaystackWebhookPayload } from '../../types/paystack.types';
 
 @Injectable()
 export class WalletService {
@@ -60,7 +61,15 @@ export class WalletService {
 
     // Initialize Paystack transaction
     try {
-      const response = await axios.post(
+      const response = await axios.post<{
+        status: boolean;
+        message: string;
+        data: {
+          authorization_url: string;
+          access_code: string;
+          reference: string;
+        };
+      }>(
         'https://api.paystack.co/transaction/initialize',
         {
           email: wallet.user.email,
@@ -88,15 +97,29 @@ export class WalletService {
     }
   }
 
-  async handlePaystackWebhook(payload: any, signature: string): Promise<void> {
-    // Verify signature
-    const hash = crypto
-      .createHmac('sha512', this.paystackSecretKey)
-      .update(JSON.stringify(payload))
-      .digest('hex');
+  async handlePaystackWebhook(
+    payload: PaystackWebhookPayload,
+    signature: string,
+  ): Promise<void> {
+    // Allow bypassing signature verification in development/testing
+    const skipSignatureCheck =
+      this.configService.get<string>('PAYSTACK_SKIP_SIGNATURE_CHECK') ===
+      'true';
 
-    if (hash !== signature) {
-      throw new BadRequestException('Invalid signature');
+    if (!skipSignatureCheck) {
+      // Verify signature
+      const hash = crypto
+        .createHmac('sha512', this.paystackSecretKey)
+        .update(JSON.stringify(payload))
+        .digest('hex');
+
+      if (hash !== signature) {
+        throw new BadRequestException('Invalid signature');
+      }
+    } else {
+      console.log(
+        '⚠️  WARNING: Paystack signature verification is DISABLED for testing',
+      );
     }
 
     const { event, data } = payload;
@@ -143,6 +166,22 @@ export class WalletService {
       reference,
       status: transaction.status,
       amount: transaction.amount,
+    };
+  }
+
+  async getWalletInfo(userId: string) {
+    const wallet = await this.walletRepository.findOne({
+      where: { userId },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+
+    return {
+      wallet_number: wallet.walletNumber,
+      balance: Number(wallet.balance),
+      created_at: wallet.createdAt,
     };
   }
 

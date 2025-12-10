@@ -5,9 +5,11 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { Reflector } from '@nestjs/core';
 import { ApiKeysService } from '../../modules/api-keys/api-keys.service';
 import { Permission } from '../../entities/api-key.entity';
+import type { RequestUser } from '../../types/request.types';
 
 @Injectable()
 export class ApiKeyOrJwtGuard implements CanActivate {
@@ -17,10 +19,11 @@ export class ApiKeyOrJwtGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user?: RequestUser }>();
     const apiKey = request.headers['x-api-key'];
-    const authHeader = request.headers['authorization'];
-
+    const authHeader = request.headers.authorization;
     // Get required permission from decorator
     const requiredPermission = this.reflector.get<Permission>(
       'permission',
@@ -28,7 +31,7 @@ export class ApiKeyOrJwtGuard implements CanActivate {
     );
 
     // If API key is provided
-    if (apiKey) {
+    if (apiKey && typeof apiKey === 'string') {
       const validation = await this.apiKeysService.validateApiKey(
         apiKey,
         requiredPermission,
@@ -39,12 +42,12 @@ export class ApiKeyOrJwtGuard implements CanActivate {
       }
 
       // Attach userId to request
-      request.user = { userId: validation.userId };
+      request.user = { userId: validation.userId!, email: '' };
       return true;
     }
 
     // If JWT is provided
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader?.startsWith('Bearer ')) {
       // JWT will be handled by JwtAuthGuard
       return true;
     }

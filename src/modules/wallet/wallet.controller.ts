@@ -5,32 +5,45 @@ import {
   Body,
   Param,
   Req,
-  UseGuards,
   Headers,
-  RawBodyRequest,
+  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { ApiTags } from '@nestjs/swagger';
 import { WalletService } from './wallet.service';
 import { DepositDto } from './dto/deposit.dto';
 import { TransferDto } from './dto/transfer.dto';
 import { ApiKeyOrJwtGuard } from '../../common/guards/api-key-or-jwt.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { Permission } from '../../entities/api-key.entity';
+import type { AuthenticatedRequest } from '../../types/request.types';
+import type { PaystackWebhookPayload } from '../../types/paystack.types';
+import {
+  DepositDocs,
+  GetBalanceDocs,
+  TransferDocs,
+  GetTransactionsDocs,
+  PaystackWebhookDocs,
+  GetDepositStatusDocs,
+  GetWalletInfoDocs,
+} from './docs/wallet.swagger';
 
+@ApiTags('Wallet')
 @Controller('wallet')
 export class WalletController {
   constructor(private walletService: WalletService) {}
 
   @Post('deposit')
-  @UseGuards(AuthGuard('jwt'), ApiKeyOrJwtGuard)
+  @DepositDocs()
+  @UseGuards(ApiKeyOrJwtGuard)
   @RequirePermission(Permission.DEPOSIT)
-  async deposit(@Req() req, @Body() depositDto: DepositDto) {
+  deposit(@Req() req: AuthenticatedRequest, @Body() depositDto: DepositDto) {
     return this.walletService.initiateDeposit(req.user.userId, depositDto);
   }
 
   @Post('paystack/webhook')
+  @PaystackWebhookDocs()
   async paystackWebhook(
-    @Body() payload: any,
+    @Body() payload: PaystackWebhookPayload,
     @Headers('x-paystack-signature') signature: string,
   ) {
     await this.walletService.handlePaystackWebhook(payload, signature);
@@ -38,30 +51,42 @@ export class WalletController {
   }
 
   @Get('deposit/:reference/status')
-  @UseGuards(AuthGuard('jwt'), ApiKeyOrJwtGuard)
+  @GetDepositStatusDocs()
+  @UseGuards(ApiKeyOrJwtGuard)
   @RequirePermission(Permission.READ)
-  async getDepositStatus(@Param('reference') reference: string) {
+  getDepositStatus(@Param('reference') reference: string) {
     return this.walletService.getDepositStatus(reference);
   }
 
-  @Get('balance')
-  @UseGuards(AuthGuard('jwt'), ApiKeyOrJwtGuard)
+  @Get('info')
+  @GetWalletInfoDocs()
+  @UseGuards(ApiKeyOrJwtGuard)
   @RequirePermission(Permission.READ)
-  async getBalance(@Req() req) {
+  getWalletInfo(@Req() req: AuthenticatedRequest) {
+    return this.walletService.getWalletInfo(req.user.userId);
+  }
+
+  @Get('balance')
+  @GetBalanceDocs()
+  @UseGuards(ApiKeyOrJwtGuard)
+  @RequirePermission(Permission.READ)
+  getBalance(@Req() req: AuthenticatedRequest) {
     return this.walletService.getBalance(req.user.userId);
   }
 
   @Post('transfer')
-  @UseGuards(AuthGuard('jwt'), ApiKeyOrJwtGuard)
+  @TransferDocs()
+  @UseGuards(ApiKeyOrJwtGuard)
   @RequirePermission(Permission.TRANSFER)
-  async transfer(@Req() req, @Body() transferDto: TransferDto) {
+  transfer(@Req() req: AuthenticatedRequest, @Body() transferDto: TransferDto) {
     return this.walletService.transfer(req.user.userId, transferDto);
   }
 
   @Get('transactions')
-  @UseGuards(AuthGuard('jwt'), ApiKeyOrJwtGuard)
+  @GetTransactionsDocs()
+  @UseGuards(ApiKeyOrJwtGuard)
   @RequirePermission(Permission.READ)
-  async getTransactions(@Req() req) {
+  getTransactions(@Req() req: AuthenticatedRequest) {
     return this.walletService.getTransactionHistory(req.user.userId);
   }
 }

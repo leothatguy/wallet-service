@@ -62,19 +62,55 @@ export class ApiKeysService {
   }
 
   async rolloverApiKey(userId: string, rolloverDto: RolloverApiKeyDto) {
-    // Find the expired key
-    const expiredKey = await this.apiKeyRepository.findOne({
-      where: { id: rolloverDto.expired_key_id, userId },
-    });
+    let expiredKey: ApiKey | null = null;
 
-    if (!expiredKey) {
-      throw new NotFoundException('API key not found');
+    // Try to find by API key first (if provided)
+    if (rolloverDto.api_key) {
+      // Find all user's keys and check which one matches
+      const userKeys = await this.apiKeyRepository.find({
+        where: { userId },
+      });
+
+      for (const key of userKeys) {
+        const isMatch = await bcrypt.compare(rolloverDto.api_key, key.keyHash);
+        if (isMatch) {
+          expiredKey = key;
+          break;
+        }
+      }
+
+      if (!expiredKey) {
+        throw new NotFoundException('API key not found');
+      }
+    }
+    // Otherwise, try to find by ID
+    else if (rolloverDto.expired_key_id) {
+      expiredKey = await this.apiKeyRepository.findOne({
+        where: { id: rolloverDto.expired_key_id, userId },
+      });
+
+      if (!expiredKey) {
+        throw new NotFoundException('API key not found');
+      }
+    } else {
+      throw new BadRequestException(
+        'Either api_key or expired_key_id must be provided',
+      );
     }
 
-    // Validate it's actually expired
-    if (expiredKey.expiresAt > new Date()) {
-      throw new BadRequestException('API key is not expired yet');
+    // Validate it's actually expired or close to expiry (within 7 days)
+    const now = new Date();
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    if (expiredKey.expiresAt > sevenDaysFromNow) {
+      throw new BadRequestException(
+        'API key must be expired or expiring within 7 days to rollover',
+      );
     }
+
+    // Deactivate old key
+    expiredKey.isActive = false;
+    await this.apiKeyRepository.save(expiredKey);
 
     // Create new key with same permissions
     return this.createApiKey(userId, {

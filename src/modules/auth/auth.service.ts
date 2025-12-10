@@ -1,14 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { User, Wallet } from '../../entities';
-
-interface GoogleUserDto {
-  googleId: string;
-  email: string;
-  name: string;
-}
+import { GoogleUserDto } from '../../types/google.types';
+import { JwtLoginResponse } from '../../types/jwt.types';
 
 @Injectable()
 export class AuthService {
@@ -60,7 +56,7 @@ export class AuthService {
     return (timestamp + random).slice(0, 13);
   }
 
-  async login(user: User) {
+  login(user: User): JwtLoginResponse {
     const payload = { email: user.email, sub: user.id };
     return {
       token: this.jwtService.sign(payload),
