@@ -63,15 +63,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     if (request.body && Object.keys(request.body).length > 0) {
-      this.logger.error(`Request Body: ${JSON.stringify(request.body, null, 2)}`);
+      this.logger.error(
+        `Request Body: ${JSON.stringify(request.body, null, 2)}`,
+      );
     }
 
     if (request.query && Object.keys(request.query).length > 0) {
-      this.logger.error(`Query Params: ${JSON.stringify(request.query, null, 2)}`);
+      this.logger.error(
+        `Query Params: ${JSON.stringify(request.query, null, 2)}`,
+      );
     }
 
     if (request.params && Object.keys(request.params).length > 0) {
-      this.logger.error(`URL Params: ${JSON.stringify(request.params, null, 2)}`);
+      this.logger.error(
+        `URL Params: ${JSON.stringify(request.params, null, 2)}`,
+      );
     }
 
     this.logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

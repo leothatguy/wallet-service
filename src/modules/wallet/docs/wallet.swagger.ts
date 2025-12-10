@@ -25,7 +25,7 @@ export const DepositDocs = () =>
       summary: 'Initiate a wallet deposit',
       description:
         'Initialize a Paystack payment for wallet deposit. Requires JWT or API key with "deposit" permission.',
-    }) as MethodDecorator,
+    }),
     ApiBody({
       schema: {
         type: 'object',
@@ -39,7 +39,7 @@ export const DepositDocs = () =>
           },
         },
       },
-    }) as MethodDecorator,
+    }),
     ApiResponse({
       status: 201,
       description: 'Deposit initialized successfully',
@@ -101,7 +101,7 @@ export const PaystackWebhookDocs = () =>
       summary: 'Paystack webhook handler',
       description:
         'Receives payment notifications from Paystack and credits wallet on successful payment. Signature verification is mandatory.',
-    }) as MethodDecorator,
+    }),
     ApiHeader({
       name: 'x-paystack-signature',
       description: 'Paystack webhook signature for verification',
@@ -125,7 +125,7 @@ export const PaystackWebhookDocs = () =>
           },
         },
       },
-    }) as MethodDecorator,
+    }),
     ApiResponse({
       status: 200,
       description: 'Webhook processed successfully',
@@ -165,7 +165,7 @@ export const GetDepositStatusDocs = () =>
       summary: 'Check deposit transaction status',
       description:
         'Retrieve the status of a deposit transaction. This endpoint does NOT credit the wallet.',
-    }) as MethodDecorator,
+    }),
     ApiParam({
       name: 'reference',
       description: 'Transaction reference',
@@ -215,7 +215,7 @@ export const GetWalletInfoDocs = () =>
       summary: 'Get wallet information',
       description:
         'Retrieve wallet details including wallet number, balance, and creation date. Requires JWT or API key with "read" permission.',
-    }) as MethodDecorator,
+    }),
     ApiResponse({
       status: 200,
       description: 'Wallet information retrieved successfully',
@@ -272,7 +272,7 @@ export const GetBalanceDocs = () =>
       summary: 'Get wallet balance',
       description:
         'Retrieve current wallet balance. Requires JWT or API key with "read" permission.',
-    }) as MethodDecorator,
+    }),
     ApiResponse({
       status: 200,
       description: 'Balance retrieved successfully',
@@ -315,7 +315,7 @@ export const TransferDocs = () =>
       summary: 'Transfer funds to another wallet',
       description:
         'Transfer money from your wallet to another user\'s wallet. Requires JWT or API key with "transfer" permission.',
-    }) as MethodDecorator,
+    }),
     ApiBody({
       schema: {
         type: 'object',
@@ -336,7 +336,7 @@ export const TransferDocs = () =>
           },
         },
       },
-    }) as MethodDecorator,
+    }),
     ApiResponse({
       status: 200,
       description: 'Transfer completed successfully',
@@ -381,7 +381,7 @@ export const GetTransactionsDocs = () =>
       summary: 'Get transaction history',
       description:
         'Retrieve all transactions for the authenticated user\'s wallet. Requires JWT or API key with "read" permission.',
-    }) as MethodDecorator,
+    }),
     ApiResponse({
       status: 200,
       description: 'Transaction history retrieved',

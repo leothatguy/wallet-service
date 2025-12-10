@@ -10,7 +10,7 @@ export const GoogleAuthDocs = (): MethodDecorator =>
     ApiOperation({
       summary: 'Initiate Google OAuth',
       description: 'Redirects user to Google OAuth consent screen',
-    }) as MethodDecorator,
+    }),
     ApiResponse({
       status: 302,
       description: 'Redirects to Google OAuth',
@@ -27,7 +27,7 @@ export const GoogleCallbackDocs = (): MethodDecorator =>
       summary: 'Google OAuth callback',
       description:
         'Handles Google OAuth callback, creates user if needed, and returns JWT token',
-    }) as MethodDecorator,
+    }),
     ApiResponse({
       status: 200,
       description: 'Successfully authenticated',
